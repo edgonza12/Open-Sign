@@ -9,7 +9,7 @@ class Signature(models.Model):
     document_name = models.CharField(max_length=255)
     document_file = models.FileField(upload_to='signed_documents/')  # Archivo del documento
     signed_document = models.BinaryField(null=True, blank=True)  # Firma del documento
-    authorized_task = models.BooleanField(default=False)  # Estado de autorización de la tarea
+    authorized_task = models.BooleanField(default=False)  # Estado de autorización de la tarea\
     timestamp = models.DateTimeField(auto_now_add=True)  # Fecha y hora de la firma
 
     def __str__(self):

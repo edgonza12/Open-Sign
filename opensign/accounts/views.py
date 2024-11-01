@@ -102,3 +102,9 @@ def download_signed_document(request, document_id):
             raise Http404("El archivo no fue encontrado.")
     else:
         raise Http404("No hay un archivo firmado disponible para este documento.")
+    
+    # accounts/views.py
+@login_required
+def view_signed_documents(request):
+    signed_documents = Signature.objects.filter(user=request.user)
+    return render(request, 'accounts/view_signed_documents.html', {'signed_documents': signed_documents})
