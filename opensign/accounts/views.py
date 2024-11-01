@@ -4,6 +4,9 @@ from django.shortcuts import render
 # accounts/views.py
 from django.contrib.auth import authenticate, login
 from django.http import JsonResponse
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth import logout
+from django.shortcuts import redirect
 
 def login_view(request):
     if request.method == 'POST':
@@ -20,3 +23,11 @@ def login_view(request):
 
 def login_page(request):
     return render(request, 'accounts/login.html')
+
+@login_required
+def home_page(request):
+    return render(request, 'accounts/home.html')
+
+def logout_view(request):
+    logout(request)
+    return redirect('login_page')

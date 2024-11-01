@@ -10,7 +10,7 @@
 <body class="d-flex align-items-center justify-content-center vh-100 bg-light">
 
     <div class="card shadow p-4" style="width: 100%; max-width: 400px;">
-        <h2 class="text-center mb-4">Iniciar sesión</h2>
+        <h2 class="text-center mb-4">OpenSign</h2>
         <form id="loginForm">
             <div class="mb-3">
                 <label for="username" class="form-label">Nombre de usuario</label>
@@ -44,8 +44,9 @@
             const result = await response.json();
             const errorMessage = document.getElementById('errorMessage');
 
+            // redirección en el archivo login.html
             if (result.status === 'success') {
-                window.location.href = '/'; // Redirige después del login exitoso
+                window.location.href = '/accounts/home/'; // Redirige a la página de inicio
             } else {
                 errorMessage.textContent = result.message;
                 errorMessage.classList.remove('d-none');
