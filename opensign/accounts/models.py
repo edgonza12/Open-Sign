@@ -12,5 +12,11 @@ class Signature(models.Model):
     authorized_task = models.BooleanField(default=False)  # Estado de autorización de la tarea\
     timestamp = models.DateTimeField(auto_now_add=True)  # Fecha y hora de la firma
 
+class UserProfile(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    private_key = models.TextField(blank=True, null=True)  # Almacena la clave privada en formato PEM
+
     def __str__(self):
         return f"Firma de {self.user.username} en {self.document_name}"
+        return self.user.username
+
