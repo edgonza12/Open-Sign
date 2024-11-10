@@ -5,6 +5,7 @@ from . import views
 urlpatterns = [
     path('login/', views.login_view, name='login'),
     path('login-page/', views.login_page, name='login_page'),
+    path('registro/', views.registro, name='registro'),
     path('home/', views.home_page, name='home_page'),  # URL de la página de inicio
     path('sign-document/', views.sign_document, name='sign_document'),  # URL para firmar documentos
     path('view-signed-documents/', views.view_signed_documents, name='view_signed_documents'),  # URL para visualizar documentos firmados

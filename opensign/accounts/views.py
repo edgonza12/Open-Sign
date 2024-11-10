@@ -3,6 +3,7 @@
 # accounts/views.py
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login
+from django.contrib.auth.forms import UserCreationForm
 from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import logout
@@ -202,3 +203,13 @@ def sign_pdf(document_path, output_path, private_key, user_id):
 
     return signature  # Devuelve la firma para almacenarla o verificarla luego
 
+def registro(request):
+    if request.method == 'POST':
+        form = UserCreationForm(request.POST)
+        if form.is_valid():
+            user = form.save()
+            login(request, user)  # Loguea al usuario tras registrarse
+            return redirect('home')  # Redirige a la página de inicio
+    else:
+        form = UserCreationForm()
+    return render(request, 'registro.html', {'form': form})
