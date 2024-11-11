@@ -10,8 +10,8 @@ from django.contrib.auth import logout
 from django.shortcuts import redirect
 from django.contrib import messages
 from django.http import FileResponse, Http404
-from .models import Signature
-from .forms import DocumentVerificationForm, DocumentUploadForm
+from .models import Signature, UserProfile
+from .forms import DocumentVerificationForm, DocumentUploadForm, RegistroForm
 from Crypto.Hash import SHA256
 from Crypto.PublicKey import RSA
 from Crypto.Signature import pkcs1_15
@@ -50,48 +50,75 @@ def sign_document(request):
         if form.is_valid():
             document_file = request.FILES['document_file']
             user = request.user
+            
+            # Obtener el perfil del usuario y la clave privada
+            try:
+                profile = UserProfile.objects.get(user=user)
+                private_key_data = profile.private_key
+                if not private_key_data:
+                    messages.error(request, "No se ha encontrado una clave privada para tu cuenta.")
+                    return redirect('sign_document')
+            except UserProfile.DoesNotExist:
+                messages.error(request, "No se ha encontrado el perfil de usuario.")
+                return redirect('sign_document')
 
-            # Verificar y crear la carpeta temporal si no existe
-            temp_dir = "temp"
-            if not os.path.exists(temp_dir):
-                os.makedirs(temp_dir)
+            # Convertir private_key_data a bytes si es necesario
+            if isinstance(private_key_data, str):
+                private_key_data = private_key_data.encode('utf-8')
+            
+            # Intento de importar la clave privada en formato bytes
+            try:
+                private_key = RSA.import_key(private_key_data)
+            except Exception as e:
+                messages.error(request, f"Error al importar la clave privada: {e}")
+                return redirect('sign_document')
 
-            # Guardar temporalmente el archivo PDF subido en el directorio temporal
-            temp_path = os.path.join(temp_dir, document_file.name)
-            with open(temp_path, 'wb') as temp_file:
-                for chunk in document_file.chunks():
-                    temp_file.write(chunk)
+            # Guardar el archivo subido en bytes
+            doc_data = document_file.read()  # Leer el archivo directamente en bytes
+            if not isinstance(doc_data, bytes):
+                messages.error(request, "Error al leer el archivo en formato de bytes.")
+                return redirect('sign_document')
 
-            # Verificar y crear la carpeta de documentos firmados si no existe
+            # Crear hash del documento
+            try:
+                hash_obj = SHA256.new(doc_data)
+            except Exception as e:
+                messages.error(request, f"Error al crear el hash del documento: {e}")
+                return redirect('sign_document')
+            
+            # Intentar firmar el hash
+            try:
+                signature = pkcs1_15.new(private_key).sign(hash_obj)
+            except Exception as e:
+                messages.error(request, f"Error al firmar el documento: {e}")
+                return redirect('sign_document')
+
+            # Crear la carpeta de documentos firmados si no existe
             signed_dir = "signed_documents"
             if not os.path.exists(signed_dir):
                 os.makedirs(signed_dir)
 
-            # Definir la ruta de salida del PDF firmado
+            # Guardar el documento con la firma en bytes
             signed_path = os.path.join(signed_dir, document_file.name)
+            try:
+                with open(signed_path, 'wb') as signed_file:
+                    signed_file.write(doc_data)  # Guarda el contenido original
+                    signed_file.write(b'\n---SIGNATURE---\n')  # Indicador de firma como bytes
+                    signed_file.write(signature)  # Añade la firma al final
 
-            # Firmar el documento usando la clave privada del usuario
-            user_private_key = user.private_key  # Supone que la clave privada está en el modelo User
-            signature = sign_pdf(temp_path, signed_path, user_private_key, user.id)
-
-            if signature:
-                # Guardar la firma en la base de datos
+                # Registrar la firma en la base de datos
                 Signature.objects.create(
                     user=user,
                     document_name=document_file.name,
-                    signed_document=signature,
+                    signed_document=signed_path,
                     authorized_task=True
                 )
-
-                # Eliminar el archivo temporal después de firmar
-                os.remove(temp_path)
-
+                
                 messages.success(request, f"Documento firmado exitosamente y guardado en {signed_path}")
-                return redirect('document_list')  # Redirige a la lista de documentos
-            else:
-                messages.error(request, "Hubo un error al intentar firmar el documento.")
-                if os.path.exists(temp_path):
-                    os.remove(temp_path)  # Eliminar el archivo temporal si existe
+                return redirect('document_list')
+            except Exception as e:
+                messages.error(request, f"Error al guardar el documento firmado: {e}")
+                return redirect('sign_document')
         else:
             messages.error(request, "Hubo un error con el formulario. Intenta de nuevo.")
     
@@ -205,11 +232,17 @@ def sign_pdf(document_path, output_path, private_key, user_id):
 
 def registro(request):
     if request.method == 'POST':
-        form = UserCreationForm(request.POST)
+        form = RegistroForm(request.POST)
         if form.is_valid():
             user = form.save()
+            # Generar clave privada RSA
+            key = RSA.generate(2048)
+            private_key = key.export_key().decode('utf-8')
+        
+            # Crear perfil de usuario con clave privada
+            UserProfile.objects.create(user=user, private_key=private_key)
             login(request, user)  # Loguea al usuario tras registrarse
-            return redirect('home')  # Redirige a la página de inicio
+            return redirect('login_page')  # Redirige a la página de inicio
     else:
-        form = UserCreationForm()
-    return render(request, 'registro.html', {'form': form})
+        form = RegistroForm()
+    return render(request, 'accounts/registro.html', {'form': form})
