@@ -100,6 +100,7 @@ def sign_document(request):
 
             # Guardar el documento con la firma en bytes
             signed_path = os.path.join(signed_dir, document_file.name)
+            print(signed_path);
             try:
                 with open(signed_path, 'wb') as signed_file:
                     signed_file.write(doc_data)  # Guarda el contenido original
