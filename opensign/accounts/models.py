@@ -15,6 +15,7 @@ class Signature(models.Model):
 
 class UserProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
-    private_key = models.TextField(blank=True, null=True)  # Campo para almacenar la clave privada
+    private_key = models.TextField(blank=True, null=True)  #  Clave privada del usuario
+    public_key = models.TextField(blank=True, null=True)   # Clave pública del usuario
     def __str__(self):
         return self.user.username

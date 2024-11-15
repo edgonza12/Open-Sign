@@ -6,6 +6,7 @@ from django.contrib.auth import authenticate, login
 from django.contrib.auth.forms import UserCreationForm
 from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
+from django.core.files.base import ContentFile
 from django.contrib.auth import logout
 from django.shortcuts import redirect
 from django.contrib import messages
@@ -74,7 +75,7 @@ def sign_document(request):
                 return redirect('sign_document')
 
             # Guardar el archivo subido en bytes
-            doc_data = document_file.read()  # Leer el archivo directamente en bytes
+            doc_data = document_file.read()
             if not isinstance(doc_data, bytes):
                 messages.error(request, "Error al leer el archivo en formato de bytes.")
                 return redirect('sign_document')
@@ -93,40 +94,33 @@ def sign_document(request):
                 messages.error(request, f"Error al firmar el documento: {e}")
                 return redirect('sign_document')
 
-            # Crear la carpeta de documentos firmados si no existe
-            signed_dir = "signed_documents"
-            if not os.path.exists(signed_dir):
-                os.makedirs(signed_dir)
+            # Crear contenido del documento firmado
+            signed_content = doc_data + b'\n---SIGNATURE---\n' + signature
 
-            # Guardar el documento con la firma en bytes
-            signed_path = os.path.join(signed_dir, document_file.name)
-            print(signed_path);
+            # Usar ContentFile para envolver los datos binarios
+            signed_file = ContentFile(signed_content, name=f"signed_{document_file.name}")
+
+            # Registrar la firma en la base de datos
             try:
-                with open(signed_path, 'wb') as signed_file:
-                    signed_file.write(doc_data)  # Guarda el contenido original
-                    signed_file.write(b'\n---SIGNATURE---\n')  # Indicador de firma como bytes
-                    signed_file.write(signature)  # Añade la firma al final
-
-                # Registrar la firma en la base de datos
                 Signature.objects.create(
                     user=user,
                     document_name=document_file.name,
-                    signed_document=signed_path,
+                    document_file=signed_file,  # Ahora es compatible
                     authorized_task=True
                 )
                 
-                messages.success(request, f"Documento firmado exitosamente y guardado en {signed_path}")
-                return redirect('document_list')
+                messages.success(request, "Documento firmado exitosamente.")
+                return redirect('sign_document')
             except Exception as e:
                 messages.error(request, f"Error al guardar el documento firmado: {e}")
                 return redirect('sign_document')
         else:
             messages.error(request, "Hubo un error con el formulario. Intenta de nuevo.")
-    
     else:
         form = DocumentUploadForm()
     
     return render(request, 'accounts/sign_document.html', {'form': form})
+    
 
 @login_required
 def view_signed_documents(request):
@@ -155,55 +149,44 @@ def download_signed_document(request, document_id):
 # accounts/views.py
 @login_required
 def verify_document(request):
-    if request.method == 'POST':
-        form = DocumentVerificationForm(request.POST, request.FILES)
-        
-        if form.is_valid():
-            # Procesa el archivo subido
-            document_file = request.FILES.get('document_file')  # Obtener archivo
-            if document_file is None:
-                messages.error(request, "No se ha subido ningún archivo. Intenta de nuevo.")
-                return render(request, 'accounts/verify_document.html', {'form': form})
+    if request.method == 'POST' and 'document_file' in request.FILES:
+        document_file = request.FILES['document_file']
+        try:
+            # Leer el contenido del archivo
+            file_content = document_file.read()
 
-            document_content = document_file.read()  # Leer el contenido del archivo
+            # Verificar si contiene el delimitador
+            if file_content.count(b'\n---SIGNATURE---\n') != 1:
+                messages.error(request, "El archivo no contiene un formato válido de firma digital.")
+                return render(request, 'accounts/verify_document.html')
 
-            # Generar el hash del documento subido
-            uploaded_hash = SHA256.new(document_content)
-            
-            # Buscar documentos firmados con el mismo nombre en la base de datos
-            matched_documents = Signature.objects.filter(document_name=document_file.name)
-            if not matched_documents:
-                messages.error(request, "No se encontraron documentos que coincidan.")
-                return render(request, 'accounts/verify_document.html', {'form': form})
+            # Separar contenido y firma
+            content, signature = file_content.split(b'\n---SIGNATURE---\n')
 
-            # Iterar a través de los documentos firmados que coincidan para verificar la firma
-            for signed_doc in matched_documents:
-                try:
-                    # Suponiendo que tenemos la clave pública del usuario en el modelo `Signature`
-                    public_key = RSA.import_key(signed_doc.user.public_key)
+            # Calcular el hash del contenido
+            hash_obj = SHA256.new(content)
 
-                    # Verificar la firma
-                    pkcs1_15.new(public_key).verify(uploaded_hash, signed_doc.signed_document)
-                    
-                    # Mensaje de éxito indicando quién firmó y si la tarea fue autorizada
-                    messages.success(
-                        request,
-                        f"El documento ha sido firmado por {signed_doc.user.username} y la tarea fue {'autorizada' if signed_doc.authorized_task else 'no autorizada'}."
-                    )
-                    break  # Detener el bucle si se encuentra una coincidencia
-                except (ValueError, TypeError):
-                    # Si la verificación falla para este documento
-                    continue
-            else:
-                # Si ningún documento coincide tras iterar todos
-                messages.error(request, "La firma del documento no coincide con ninguna firma registrada.")
-        else:
-            messages.error(request, "Hubo un error con el formulario. Intenta de nuevo.")
-    
-    else:
-        form = DocumentVerificationForm()
+            # Recuperar la clave pública del usuario
+            user = request.user
+            profile = user.userprofile  # Asegúrate de que UserProfile esté relacionado con User
+            public_key_data = profile.public_key
 
-    return render(request, 'accounts/verify_document.html', {'form': form})
+            if isinstance(public_key_data, str):
+                public_key_data = public_key_data.encode('utf-8')
+
+            public_key = RSA.import_key(public_key_data)
+
+            # Verificar la firma
+            try:
+                pkcs1_15.new(public_key).verify(hash_obj, signature)
+                messages.success(request, "El documento se verificó correctamente. La firma es válida.")
+            except (ValueError, TypeError):
+                messages.error(request, "La firma no es válida o el documento ha sido alterado.")
+        except Exception as e:
+            messages.error(request, f"Error al procesar el documento: {e}")
+
+    return render(request, 'accounts/verify_document.html')
+
 
 
 def sign_pdf(document_path, output_path, private_key, user_id):
@@ -231,19 +214,45 @@ def sign_pdf(document_path, output_path, private_key, user_id):
 
     return signature  # Devuelve la firma para almacenarla o verificarla luego
 
+# def registro(request):
+#     if request.method == 'POST':
+#         form = RegistroForm(request.POST)
+#         if form.is_valid():
+#             user = form.save()
+#             # Generar clave privada RSA
+#             key = RSA.generate(2048)
+#             private_key = key.export_key().decode('utf-8')
+        
+#             # Crear perfil de usuario con clave privada
+#             UserProfile.objects.create(user=user, private_key=private_key)
+#             login(request, user)  # Loguea al usuario tras registrarse
+#             return redirect('login_page')  # Redirige a la página de inicio
+#     else:
+#         form = RegistroForm()
+#     return render(request, 'accounts/registro.html', {'form': form})
+
 def registro(request):
     if request.method == 'POST':
         form = RegistroForm(request.POST)
         if form.is_valid():
             user = form.save()
-            # Generar clave privada RSA
+
+            # Generar clave privada y pública RSA
             key = RSA.generate(2048)
-            private_key = key.export_key().decode('utf-8')
-        
-            # Crear perfil de usuario con clave privada
-            UserProfile.objects.create(user=user, private_key=private_key)
-            login(request, user)  # Loguea al usuario tras registrarse
+            private_key = key.export_key().decode('utf-8')  # Clave privada en formato string
+            public_key = key.publickey().export_key().decode('utf-8')  # Clave pública en formato string
+
+            # Crear perfil de usuario con claves
+            UserProfile.objects.create(
+                user=user,
+                private_key=private_key,
+                public_key=public_key
+            )
+
+            # Loguear al usuario tras registrarse
+            login(request, user)
             return redirect('login_page')  # Redirige a la página de inicio
     else:
         form = RegistroForm()
+    
     return render(request, 'accounts/registro.html', {'form': form})
