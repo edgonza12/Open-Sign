@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+
+{% block title %}Lista de Tareas{% endblock %}
+
+{% block content %}
+<h1 class="mb-4">Aprobar Tarea</h1>
+<div class="card">
+    <div class="card-body">
+        <h5 class="card-title">{{ task.title }}</h5>
+        <p class="card-text">{{ task.description }}</p>
+        <form method="post" enctype="multipart/form-data" class="mt-3">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit" class="btn btn-success">Firmar y Aprobar</button>
+        </form>
+    </div>
+</div>
+{% endblock %}
+        
