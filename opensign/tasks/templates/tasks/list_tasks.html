@@ -22,6 +22,8 @@
             <td>
                 {% if task.is_approved %}
                     <span class="badge bg-success">Aprobada</span>
+                {% elif task.is_rejected %}
+                    <span class="badge bg-danger">Rechazada</span>
                 {% else %}
                     <span class="badge bg-warning">Pendiente</span>
                 {% endif %}
@@ -29,6 +31,13 @@
             <td>
                 {% if not task.is_approved %}
                 <a href="{% url 'approve_task' task.id %}" class="btn btn-primary btn-sm">Aprobar</a>
+                {% endif %}
+
+                {% if not task.is_rejected and not task.is_approved %}
+                <a href="{% url 'reject_task' task.id %}" class="btn btn-sm btn-danger">
+                <a href="{% url 'approve_task' task.id %}" class="btn btn-sm btn-danger">
+                    Rechazar
+                </a>
                 {% endif %}
             </td>
         </tr>

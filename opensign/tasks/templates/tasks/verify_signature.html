@@ -1,0 +1,11 @@
+{% extends 'base.html' %}
+
+{% block title %}Lista de Tareas{% endblock %}
+
+{% block content %}
+<h1>Verificación de Firma</h1>
+<p>Tarea: {{ task.title }}</p>
+<p>Firma válida: {{ is_valid }}</p>
+
+{% endblock %}
+        

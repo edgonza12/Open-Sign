@@ -11,22 +11,44 @@
             <div class="card-body">
                 <form method="post" class="needs-validation" novalidate>
                     {% csrf_token %}
+                    
                     <!-- Campo del título -->
                     <div class="mb-3">
                         <label for="id_title" class="form-label">Título</label>
-                        {{ form.title }}
+                        <input 
+                            type="text" 
+                            name="title" 
+                            id="id_title" 
+                            class="form-control" 
+                            placeholder="Escribe el título de la tarea" 
+                            value="{{ form.title.value|default:'' }}" 
+                        />
+                        {% for error in form.title.errors %}
+                        <div class="text-danger small">{{ error }}</div>
+                        {% endfor %}
                     </div>
 
                     <!-- Campo de descripción -->
                     <div class="mb-3">
                         <label for="id_description" class="form-label">Descripción</label>
-                        {{ form.description }}
+                        <textarea 
+                            name="description" 
+                            id="id_description" 
+                            class="form-control" 
+                            rows="4" 
+                            placeholder="Escribe una descripción detallada">{{ form.description.value|default:'' }}</textarea>
+                        {% for error in form.description.errors %}
+                        <div class="text-danger small">{{ error }}</div>
+                        {% endfor %}
                     </div>
 
                     <!-- Campo de asignación -->
                     <div class="mb-3">
                         <label for="id_assigned_to" class="form-label">Asignar a</label>
                         {{ form.assigned_to }}
+                        {% for error in form.assigned_to.errors %}
+                        <div class="text-danger small">{{ error }}</div>
+                        {% endfor %}
                     </div>
 
                     <!-- Botón de envío -->
