@@ -13,9 +13,3 @@ class Task(models.Model):
 
     def __str__(self):
         return self.title
-
-# class Signature(models.Model):
-#     task = models.OneToOneField(Task, on_delete=models.CASCADE, related_name='signature')
-#     signed_by = models.ForeignKey(User, on_delete=models.CASCADE)
-#     signature_file = models.FileField(upload_to='signatures/')
-#     signed_at = models.DateTimeField(auto_now_add=True)

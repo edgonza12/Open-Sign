@@ -36,9 +36,7 @@
                 {% endif %}
 
                 {% if not task.is_rejected and not task.is_approved %}
-                <a href="{% url 'reject_task' task.id %}" class="btn btn-sm btn-danger">
-                    Rechazar
-                </a>
+                <a href="{% url 'reject_task' task.id %}" class="btn btn-sm btn-danger">Rechazar</a>
                 {% endif %}
             </td>
             <td>
