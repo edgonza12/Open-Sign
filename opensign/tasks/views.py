@@ -1,10 +1,10 @@
 from django.shortcuts import render, get_object_or_404, redirect
-from django.http import JsonResponse
+from django.http import JsonResponse, FileResponse
 from django.contrib.auth.decorators import login_required
 from .models import Task
 from .forms import TaskForm 
 from accounts.models import UserProfile
-from .utils import sign_task, verify_signature
+from .utils import sign_task, verify_signature, generate_task_pdf
 
 
 @login_required
@@ -60,6 +60,7 @@ def approve_task(request, task_id):
 
     return redirect('list_tasks')
 
+@login_required
 def reject_task(request, task_id):
     task = get_object_or_404(Task, id=task_id)
     task.is_rejected = True
@@ -68,16 +69,52 @@ def reject_task(request, task_id):
     return redirect('list_tasks')  # Redirige a la lista de tareas
 
 
+@login_required
 def verify_task_signature(request, task_id):
+    # Obtener la tarea por su ID
     task = get_object_or_404(Task, id=task_id)
-    user_profile = UserProfile.objects.get(user=task.assigned_to)
+
+    # Verificar que la tarea esté aprobada y tenga una firma
+    if not task.is_approved or not task.signature:
+        return render(request, 'tasks/verify_signature.html', {
+            'task': task,
+            'is_valid': False,
+            'error': "La tarea no está aprobada o no tiene una firma registrada."
+        })
+
+    # Obtener la llave pública del usuario que aprobó la tarea
+    assigned_user = task.assigned_to
+    user_profile = get_object_or_404(UserProfile, user=assigned_user)
     public_key = user_profile.public_key
 
+    # Preparar los datos para la verificación
     data_to_verify = f"{task.title}|{task.description}"
+
+    # Verificar la firma
     is_valid = verify_signature(data_to_verify, task.signature, public_key)
 
-    context = {
+    # Renderizar el resultado
+    return render(request, 'tasks/verify_signature.html', {
         'task': task,
         'is_valid': is_valid,
-    }
-    return render(request, 'tasks/verify_signature.html', context)
+        'error': None
+    })
+
+
+def download_task_pdf(request, task_id):
+    # Obtener la tarea
+    task = get_object_or_404(Task, id=task_id)
+
+    # Verificar que la tarea esté aprobada
+    if not task.is_approved:
+        return HttpResponse("La tarea no está aprobada.", status=400)
+
+    # Obtener el perfil del usuario asignado
+    user_profile = get_object_or_404(UserProfile, user=task.assigned_to)
+
+    # Generar el PDF
+    pdf_buffer = generate_task_pdf(task, user_profile)
+
+    # Retornar como respuesta de archivo
+    response = FileResponse(pdf_buffer, as_attachment=True, filename=f"Tarea_{task.id}.pdf")
+    return response

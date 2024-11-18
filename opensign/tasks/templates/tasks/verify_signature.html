@@ -3,9 +3,31 @@
 {% block title %}Lista de Tareas{% endblock %}
 
 {% block content %}
-<h1>Verificación de Firma</h1>
-<p>Tarea: {{ task.title }}</p>
-<p>Firma válida: {{ is_valid }}</p>
+<div class="container mt-4">
+    <h1>Verificación de Firma</h1>
+    <hr>
+    <div class="card">
+        <div class="card-body">
+            <h5 class="card-title">Tarea: {{ task.title }}</h5>
+            <p class="card-text">Descripción: {{ task.description }}</p>
+            {% if error %}
+                <div class="alert alert-danger" role="alert">
+                    {{ error }}
+                </div>
+            {% else %}
+                {% if is_valid %}
+                    <div class="alert alert-success" role="alert">
+                        La firma es válida.
+                    </div>
+                {% else %}
+                    <div class="alert alert-danger" role="alert">
+                        La firma no es válida.
+                    </div>
+                {% endif %}
+            {% endif %}
+        </div>
+    </div>
+</div>
 
 {% endblock %}
         

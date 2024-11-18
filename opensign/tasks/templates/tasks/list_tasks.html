@@ -12,6 +12,8 @@
             <th>Descripción</th>
             <th>Estado</th>
             <th>Acciones</th>
+            <th>Verificar Firma</th>
+            <th>Descargar</th>
         </tr>
     </thead>
     <tbody>
@@ -35,11 +37,24 @@
 
                 {% if not task.is_rejected and not task.is_approved %}
                 <a href="{% url 'reject_task' task.id %}" class="btn btn-sm btn-danger">
-                <a href="{% url 'approve_task' task.id %}" class="btn btn-sm btn-danger">
                     Rechazar
                 </a>
                 {% endif %}
             </td>
+            <td>
+                {% if task.is_approved %}
+                    <a href="{% url 'verify_task_signature' task.id %}" class="btn btn-sm btn-info">
+                        Verificar Firma
+                    </a>
+                {% endif %}
+            </td>  
+            <td>
+                {% if task.is_approved %}
+                    <a href="{% url 'download_task_pdf' task.id %}" class="btn btn-sm btn-secondary">
+                        Descargar PDF
+                    </a>
+                {% endif %}
+            </td>        
         </tr>
         {% endfor %}
     </tbody>
