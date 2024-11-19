@@ -33,7 +33,7 @@
         
         <!-- Alerta de error -->
         {% if form.errors %}
-        <div class="alert alert-danger" role="alert">
+        <div id="error-alert" class="alert alert-danger" role="alert">
             <strong>Errores encontrados:</strong>
             <ul>
                 {% for field in form %}
@@ -78,6 +78,18 @@
     <script>
         document.addEventListener("DOMContentLoaded", () => {
             const form = document.getElementById("registerForm");
+            const errorAlert = document.getElementById("error-alert");
+
+            // Si existe la alerta, ocultarla después de 5 segundos
+            if (errorAlert) {
+                setTimeout(() => {
+                    errorAlert.style.transition = "opacity 0.5s ease";
+                    errorAlert.style.opacity = "0"; // Añade un efecto de desvanecimiento
+                    setTimeout(() => {
+                        errorAlert.style.display = "none";
+                    }, 500); // Esconde completamente después de la transición
+                }, 5000); // Espera 5 segundos antes de empezar a ocultar
+            }
 
             form.addEventListener("submit", function (event) {
                 if (!form.checkValidity()) {

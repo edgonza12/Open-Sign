@@ -16,6 +16,9 @@ class RegistroForm(UserCreationForm):
     
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.fields['username'].required = True
+        self.fields['password1'].required = True
+        self.fields['password2'].required = True
         # Añadir la clase 'form-control' a cada campo del formulario
         for field in self.fields.values():
             field.widget.attrs['class'] = 'form-control'
