@@ -19,14 +19,10 @@
         .card {
             width: 100%;
             max-width: 400px;
-            margin: 0 auto;
             padding: 20px;
             border: none;
             border-radius: 10px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        }
-        .alert {
-            display: none;
         }
     </style>
 </head>
@@ -34,20 +30,22 @@
 
     <div class="card">
         <h3 class="card-title text-center mb-4">Crear Cuenta</h3>
-    <!-- Alerta de error para notificar si hay errores en el formulario -->
-    <div id="error-alert" class="alert alert-danger" role="alert">
+        
+        <!-- Alerta de error -->
         {% if form.errors %}
+        <div class="alert alert-danger" role="alert">
             <strong>Errores encontrados:</strong>
             <ul>
                 {% for field in form %}
                     {% for error in field.errors %}
-                        <li>{{ error }}</li>
+                        <li>{{ field.label }}: {{ error }}</li>
                     {% endfor %}
                 {% endfor %}
             </ul>
+        </div>
         {% endif %}
-    </div>    
-        <form method="post" id="registerForm" novalidate>
+
+        <form method="post" id="registerForm" novalidate class="needs-validation">
             {% csrf_token %}
             <div class="mb-3">
                 <label for="id_username" class="form-label">Nombre de Usuario</label>
@@ -77,52 +75,20 @@
         </p>
     </div>
 
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const form = document.getElementById("registerForm");
 
-<script>
-    (function () {
-        'use strict';
-        const form = document.getElementById('registerForm');
-        const errorAlert = document.getElementById('error-alert');
+            form.addEventListener("submit", function (event) {
+                if (!form.checkValidity()) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                }
 
-        // Mostrar la alerta de error si hay errores en el backend
-        {% if form.errors %}
-            errorAlert.style.display = 'block';
-            setTimeout(() => {
-                errorAlert.style.display = 'none';
-            }, 5000); // La alerta desaparecerá después de 5 segundos
-
-            // Agregar clases 'is-invalid' a los campos con errores en el backend
-            {% for field in form %}
-                {% if field.errors %}
-                    document.getElementById("id_{{ field.name }}").classList.add("is-invalid");
-                {% endif %}
-            {% endfor %}
-        {% endif %}
-
-        // Validación de formulario en el frontend con JavaScript
-        form.addEventListener('submit', function (event) {
-            if (!form.checkValidity()) {
-                event.preventDefault();
-                event.stopPropagation();
-                form.classList.add('was-validated');
-
-                // Mostrar alerta si hay errores en el frontend
-                errorAlert.style.display = 'block';
-                errorAlert.innerHTML = '<strong>Por favor, corrige los errores del formulario.</strong>';
-                
-                // La alerta desaparecerá después de 5 segundos
-                setTimeout(() => {
-                    errorAlert.style.display = 'none';
-                }, 5000);
-
-                // Agregar clase 'is-invalid' a cada campo que tenga errores
-                form.querySelectorAll(':invalid').forEach(input => {
-                    input.classList.add('is-invalid');
-                });
-            }
-        }, false);
-    })();
-</script>
+                form.classList.add("was-validated");
+            }, false);
+        });
+    </script>
 
 </body>
 </html>
