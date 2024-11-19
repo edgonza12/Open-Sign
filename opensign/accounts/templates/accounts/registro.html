@@ -95,8 +95,6 @@
             {% for field in form %}
                 {% if field.errors %}
                     document.getElementById("id_{{ field.name }}").classList.add("is-invalid");
-                    document.getElementById("id_{{ field.password1 }}").classList.add("is-invalid");
-                    document.getElementById("id_{{ field.password2 }}").classList.add("is-invalid");
                 {% endif %}
             {% endfor %}
         {% endif %}

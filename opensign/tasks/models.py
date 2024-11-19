@@ -9,6 +9,7 @@ class Task(models.Model):
     assigned_to = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='assigned_tasks')
     is_approved = models.BooleanField(default=False)
     is_rejected = models.BooleanField(default=False) 
+    rejection_comment = models.TextField(blank=True, null=True)  # Nuevo campo
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):

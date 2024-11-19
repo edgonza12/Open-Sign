@@ -14,7 +14,15 @@ class TaskForm(forms.ModelForm):
         label="Asignar a"
     )
 
-# class SignatureForm(forms.ModelForm):
-#     class Meta:
-#         model = Signature
-#         fields = ['signature_file']
+class RejectTaskForm(forms.ModelForm):
+    class Meta:
+        model = Task
+        fields = ['rejection_comment']
+        labels = {'rejection_comment': 'Motivo del rechazo'}
+        widgets = {
+            'rejection_comment': forms.Textarea(attrs={
+                'class': 'form-control',
+                'placeholder': 'Escribe el motivo del rechazo aquí...',
+                'rows': 4,
+            }),
+        }

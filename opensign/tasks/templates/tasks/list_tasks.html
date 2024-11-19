@@ -31,13 +31,35 @@
                 {% endif %}
             </td>
             <td>
-                {% if not task.is_approved %}
+                {% if not task.is_approved and not task.is_rejected %}
                 <a href="{% url 'approve_task' task.id %}" class="btn btn-primary btn-sm">Aprobar</a>
+                <button type="button" class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#rejectModal{{ task.id }}">
+                    Rechazar
+                </button>
+                <!-- Modal para rechazar la tarea -->
+                <div class="modal fade" id="rejectModal{{ task.id }}" tabindex="-1" aria-labelledby="rejectModalLabel{{ task.id }}" aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <form method="POST" action="{% url 'reject_task' task.id %}">
+                                {% csrf_token %}
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="rejectModalLabel{{ task.id }}">Rechazar Tarea</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <p>¿Por qué deseas rechazar esta tarea?</p>
+                                    <textarea name="rejection_comment" class="form-control" rows="4" placeholder="Motivo del rechazo..."></textarea>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                    <button type="submit" class="btn btn-danger">Rechazar</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
                 {% endif %}
 
-                {% if not task.is_rejected and not task.is_approved %}
-                <a href="{% url 'reject_task' task.id %}" class="btn btn-sm btn-danger">Rechazar</a>
-                {% endif %}
             </td>
             <td>
                 {% if task.is_approved %}
@@ -47,12 +69,10 @@
                 {% endif %}
             </td>  
             <td>
-                {% if task.is_approved %}
-                    <a href="{% url 'download_task_pdf' task.id %}" class="btn btn-sm btn-secondary">
-                        Descargar PDF
-                    </a>
-                {% endif %}
-            </td>        
+                <a href="{% url 'download_task_pdf' task.id %}" class="btn btn-sm btn-secondary">
+                    Descargar PDF
+                </a>
+            </td>    
         </tr>
         {% endfor %}
     </tbody>

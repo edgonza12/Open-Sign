@@ -2,7 +2,7 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.http import JsonResponse, FileResponse
 from django.contrib.auth.decorators import login_required
 from .models import Task
-from .forms import TaskForm 
+from .forms import TaskForm, RejectTaskForm
 from accounts.models import UserProfile
 from .utils import sign_task, verify_signature, generate_task_pdf
 
@@ -25,22 +25,6 @@ def list_tasks(request):
     tasks = Task.objects.all()
     return render(request, 'tasks/list_tasks.html', {'tasks': tasks})
 
-#@login_required
-# def approve_task(request, task_id):
-#     task = get_object_or_404(Task, id=task_id)
-#     if request.method == 'POST':
-#         form = SignatureForm(request.POST, request.FILES)
-#         if form.is_valid():
-#             signature = form.save(commit=False)
-#             signature.task = task
-#             signature.signed_by = request.user
-#             signature.save()
-#             task.is_approved = True
-#             task.save()
-#             return redirect('list_tasks')
-#     else:
-#         form = SignatureForm()
-#     return render(request, 'tasks/approve_task.html', {'task': task, 'form': form})
 @login_required
 def approve_task(request, task_id):
     task = get_object_or_404(Task, id=task_id)
@@ -63,11 +47,18 @@ def approve_task(request, task_id):
 @login_required
 def reject_task(request, task_id):
     task = get_object_or_404(Task, id=task_id)
-    task.is_rejected = True
-    task.is_approved = False  # Por si la tarea ya estaba aprobada
-    task.save()
-    return redirect('list_tasks')  # Redirige a la lista de tareas
 
+    if request.method == 'POST':
+        form = RejectTaskForm(request.POST, instance=task)
+        if form.is_valid():
+            task.is_rejected = True
+            task.is_approved = False  # Marcar como rechazada
+            form.save()
+            return redirect('list_tasks')
+    else:
+        form = RejectTaskForm(instance=task)
+
+    return render(request, 'tasks/reject_task.html', {'form': form, 'task': task})
 
 @login_required
 def verify_task_signature(request, task_id):
@@ -100,17 +91,16 @@ def verify_task_signature(request, task_id):
         'error': None
     })
 
-
 def download_task_pdf(request, task_id):
     # Obtener la tarea
     task = get_object_or_404(Task, id=task_id)
 
-    # Verificar que la tarea esté aprobada
-    if not task.is_approved:
-        return HttpResponse("La tarea no está aprobada.", status=400)
-
-    # Obtener el perfil del usuario asignado
-    user_profile = get_object_or_404(UserProfile, user=task.assigned_to)
+    # Obtener el perfil del usuario asignado (si lo hay)
+    user_profile = (
+        get_object_or_404(UserProfile, user=task.assigned_to)
+        if task.assigned_to
+        else None
+    )
 
     # Generar el PDF
     pdf_buffer = generate_task_pdf(task, user_profile)
