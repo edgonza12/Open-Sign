@@ -1,6 +1,6 @@
 # Create your models here.
 from django.db import models
-from django.contrib.auth.models import User
+from django.contrib.auth.models import User, Group, AbstractUser 
 
 class Signature(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='signatures')
@@ -17,5 +17,6 @@ class UserProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     private_key = models.TextField(blank=True, null=True)  #  Clave privada del usuario
     public_key = models.TextField(blank=True, null=True)   # Clave pública del usuario
+    role = models.ForeignKey(Group, on_delete=models.SET_NULL, null=True, blank=True)
     def __str__(self):
-        return self.user.username
+        return f"{self.user.username} - {self.role.name if self.role else 'Sin perfil'}"

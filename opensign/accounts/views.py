@@ -6,17 +6,18 @@ from django.contrib.auth import authenticate, login
 from django.contrib.auth.forms import UserCreationForm
 from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.models import Group, User
 from django.core.files.base import ContentFile
 from django.contrib.auth import logout
 from django.shortcuts import redirect
 from django.contrib import messages
 from django.http import FileResponse, Http404
 from .models import Signature, UserProfile
-from .forms import DocumentVerificationForm, DocumentUploadForm, RegistroForm
+from .forms import DocumentVerificationForm, DocumentUploadForm, RegistroForm, AssignProfileForm
 from Crypto.Hash import SHA256
 from Crypto.PublicKey import RSA
 from Crypto.Signature import pkcs1_15
-from .utils import sign_pdf  # Importa la función de firma
+from .utils import sign_pdf, role_required  # Importa la función de firma
 import os
 
 def login_view(request):
@@ -35,6 +36,7 @@ def login_view(request):
 def login_page(request):
     return render(request, 'accounts/login.html')
 
+@role_required('Admin')
 @login_required
 def home_page(request):
     return render(request, 'accounts/home.html')
@@ -105,7 +107,7 @@ def sign_document(request):
                 Signature.objects.create(
                     user=user,
                     document_name=document_file.name,
-                    document_file=signed_file,  # Ahora es compatible
+                    document_file=signed_file,  
                     authorized_task=True
                 )
                 
@@ -214,23 +216,6 @@ def sign_pdf(document_path, output_path, private_key, user_id):
 
     return signature  # Devuelve la firma para almacenarla o verificarla luego
 
-# def registro(request):
-#     if request.method == 'POST':
-#         form = RegistroForm(request.POST)
-#         if form.is_valid():
-#             user = form.save()
-#             # Generar clave privada RSA
-#             key = RSA.generate(2048)
-#             private_key = key.export_key().decode('utf-8')
-        
-#             # Crear perfil de usuario con clave privada
-#             UserProfile.objects.create(user=user, private_key=private_key)
-#             login(request, user)  # Loguea al usuario tras registrarse
-#             return redirect('login_page')  # Redirige a la página de inicio
-#     else:
-#         form = RegistroForm()
-#     return render(request, 'accounts/registro.html', {'form': form})
-
 def registro(request):
     if request.method == 'POST':
         form = RegistroForm(request.POST)
@@ -256,3 +241,29 @@ def registro(request):
         form = RegistroForm()
     
     return render(request, 'accounts/registro.html', {'form': form})
+
+def assign_role(user, role_name):
+    try:
+        role = Group.objects.get(name=role_name)
+        user.groups.add(role)
+        user.userprofile.role = role
+        user.userprofile.save()
+    except Group.DoesNotExist:
+        raise ValueError(f"El rol '{role_name}' no existe.")
+    
+@login_required
+def assign_profile_view(request):
+    if request.method == 'POST':
+        form = AssignProfileForm(request.POST)
+        if form.is_valid():
+            form.assign_profile()
+            return redirect('assign_profile_success')  # Redirige a la nueva vista
+    else:
+        form = AssignProfileForm()
+
+    return render(request, 'assign_profile.html', {'form': form})
+
+
+@login_required
+def assign_profile_success_view(request):
+    return render(request, 'assign_profile_succes.html')

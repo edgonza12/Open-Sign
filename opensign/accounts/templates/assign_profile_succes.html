@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="alert alert-success">
+        <h4 class="alert-heading">¡Perfil asignado con éxito!</h4>
+        <p>El perfil se ha asignado correctamente al usuario.</p>
+        <hr>
+        <a href="{% url 'assign_profile' %}" class="btn btn-secondary">Asignar otro perfil</a>
+    </div>
+</div>
+{% endblock %}

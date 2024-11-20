@@ -1,11 +1,14 @@
 # accounts/urls.py
 from django.urls import path
+from django.shortcuts import render
 from . import views
 
 urlpatterns = [
     path('login/', views.login_view, name='login'),
     path('login-page/', views.login_page, name='login_page'),
     path('registro/', views.registro, name='registro'),
+    path('assign-profile/', views.assign_profile_view, name='assign_profile'),
+    path('assign-profile/success/', views.assign_profile_success_view, name='assign_profile_success'),
     path('home/', views.home_page, name='home_page'),  # URL de la página de inicio
     path('sign-document/', views.sign_document, name='sign_document'),  # URL para firmar documentos
     path('view-signed-documents/', views.view_signed_documents, name='view_signed_documents'),  # URL para visualizar documentos firmados
