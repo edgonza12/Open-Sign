@@ -7,8 +7,11 @@
     <form method="POST" enctype="multipart/form-data">
         {% csrf_token %}
         <div class="mb-3">
-            {{ form.document_file.label_tag }}
-            {{ form.document_file }}
+
+            <label for="document_file" class="form-label">Selecciona el documento ha firmar: </label>
+            <input type="file" class="form-control" id="document_file" name="document_file" required>
+            <!-- {{ form.document_file.label_tag }}
+            {{ form.document_file }} -->
         </div>
         <button type="submit" class="btn btn-primary w-100">Firmar Documento</button>
     </form>

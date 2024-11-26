@@ -9,7 +9,7 @@ class DocumentVerificationForm(forms.Form):
     document_file = forms.FileField(label="Subir documento para verificar")
 
 class DocumentUploadForm(forms.Form):
-    document_file = forms.FileField(label="Subir documento PDF para firmar")
+    document_file = forms.FileField(label="Subir documento para firmar")
 
 class RegistroForm(UserCreationForm):
     class Meta:
@@ -32,16 +32,29 @@ class AssignProfileForm(forms.Form):
         widget=forms.Select(attrs={'class': 'form-control'})
     )
     role = forms.ModelChoiceField(
-        queryset=Group.objects.all(),  # Cambia aquí para obtener instancias de Group
+        queryset=UserProfile.objects.values_list('role', flat=True).distinct(),
         label="Perfil",
         widget=forms.Select(attrs={'class': 'form-control'})
     )
 
+    def __init__(self, *args, **kwargs):
+        super(AssignProfileForm, self).__init__(*args, **kwargs)
+        self.fields['user'].widget.attrs.update({'placeholder': 'Selecciona un usuario'})
+        self.fields['role'].widget.attrs.update({'placeholder': 'Selecciona un perfil'})
+
     def assign_profile(self):
         user = self.cleaned_data['user']
-        role = self.cleaned_data['role']  # Esto será una instancia de Group
+        role = self.cleaned_data['role']
 
-        # Obtener o crear el perfil de usuario
+        # Verifica si el usuario ya tiene un perfil
         user_profile, created = UserProfile.objects.get_or_create(user=user)
-        user_profile.role = role  # Asignar la instancia de Group
+        user_profile.role = role  # Asigna el rol
         user_profile.save()
+
+    def clean(self):
+        cleaned_data = super().clean()
+        user = cleaned_data.get('user')
+        role = cleaned_data.get('role')
+
+        if UserProfile.objects.filter(user=user, role=role).exists():
+            raise ValidationError("Este usuario ya tiene el perfil asignado.")
