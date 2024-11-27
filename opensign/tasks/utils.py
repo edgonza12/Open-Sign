@@ -5,7 +5,7 @@ from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 from reportlab.lib import colors
 from reportlab.lib.units import inch
-import io
+import io, base64
 
 def sign_task(data, private_key_pem):
     """
@@ -90,19 +90,22 @@ def generate_task_pdf(task, user_profile):
         pdf.drawString(1 * inch, height - 4.3 * inch, task.rejection_comment)
 
     # Firma digital (solo si está aprobada)
-    if task.is_approved:
+    if task.is_approved and task.signature:
+        # Convertir la firma a texto base64 para incrustarla en el PDF (o como bytes, si es necesario)
+        signature_base64 = base64.b64encode(task.signature).decode('utf-8')
         pdf.setFont("Helvetica-Bold", 12)
         pdf.drawString(1 * inch, height - 5.5 * inch, "Firma Digital:")
         pdf.setFont("Courier", 10)
-        signature_preview = str(task.signature)[:100] + "..." if task.signature else "Sin firma"
+        signature_preview = str(signature_base64[:50])[:100] + "..." if task.signature else "Sin firma"
+        #signature_preview = str(task.signature)[:100] + "..." if task.signature else "Sin firma"
         pdf.drawString(1 * inch, height - 5.8 * inch, signature_preview)
 
-        # Llave pública
-        pdf.setFont("Helvetica-Bold", 12)
-        pdf.drawString(1 * inch, height - 6.3 * inch, "Llave Pública del Firmante:")
-        pdf.setFont("Courier", 10)
-        public_key_preview = user_profile.public_key[:100] + "..."
-        pdf.drawString(1 * inch, height - 6.6 * inch, public_key_preview)
+        # # Llave pública
+        # pdf.setFont("Helvetica-Bold", 12)
+        # pdf.drawString(1 * inch, height - 6.3 * inch, "Llave Pública del Firmante:")
+        # pdf.setFont("Courier", 10)
+        # public_key_preview = user_profile.public_key[:100] + "..."
+        # pdf.drawString(1 * inch, height - 6.6 * inch, public_key_preview)
 
     # Pie de página
     pdf.setFillColor(colors.HexColor("#004d40"))

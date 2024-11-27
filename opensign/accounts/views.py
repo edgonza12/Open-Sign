@@ -18,7 +18,7 @@ from Crypto.Hash import SHA256
 from Crypto.PublicKey import RSA
 from Crypto.Signature import pkcs1_15
 from .utils import sign_pdf, role_required  # Importa la función de firma
-import os
+import os, hashlib
 
 def login_view(request):
     if request.method == 'POST':
@@ -36,7 +36,7 @@ def login_view(request):
 def login_page(request):
     return render(request, 'accounts/login.html')
 
-@role_required('Admin')
+#@role_required('Admin')
 @login_required
 def home_page(request):
     return render(request, 'accounts/home.html')
@@ -107,7 +107,8 @@ def sign_document(request):
                 Signature.objects.create(
                     user=user,
                     document_name=document_file.name,
-                    document_file=signed_file,  
+                    document_file=signed_file,
+                    signed_document = signed_content,  
                     authorized_task=True
                 )
                 
@@ -267,3 +268,75 @@ def assign_profile_view(request):
 @login_required
 def assign_profile_success_view(request):
     return render(request, 'assign_profile_succes.html')
+
+
+def verificar_firma(request):
+    datos_firma = None
+    error = None
+
+    if request.method == 'POST' and 'document_file' in request.FILES:
+        document_file = request.FILES['document_file']
+        try:
+            # Leer el contenido del archivo cargado
+            contenido = document_file.read()
+
+            # Dividir el contenido original y la firma usando el separador
+            try:
+                contenido_original, firma = contenido.split(b'\n---SIGNATURE---\n')
+            except ValueError:
+                raise ValueError("El archivo no contiene una firma válida.")
+
+            # Calcular el hash del contenido original
+            hash_obj = SHA256.new(contenido_original)
+
+            # Buscar coincidencias en la base de datos de `Signature`
+            firmas_registradas = Signature.objects.all()
+            firma_valida = False
+
+            for firma_registrada in firmas_registradas:
+                # Obtener los datos binarios del archivo firmado desde la base de datos
+                firmado_data = firma_registrada.signed_document
+
+                if not firmado_data:  # Validar si firmado_data no es None
+                    continue
+
+                # Separar contenido y firma del documento almacenado
+                try:
+                    contenido_almacenado, firma_almacenada = firmado_data.split(b'\n---SIGNATURE---\n')
+                except ValueError:
+                    continue  # Si el formato no es válido, pasa al siguiente registro
+
+                # Verificar si el contenido original coincide con el almacenado
+                if contenido_original != contenido_almacenado:
+                    continue
+
+                # Obtener la clave pública del usuario que firmó el documento
+                try:
+                    user_profile = UserProfile.objects.get(user=firma_registrada.user)
+                    llave_publica = RSA.import_key(user_profile.public_key.encode('utf-8'))
+                except UserProfile.DoesNotExist:
+                    continue  # Si el perfil no existe, pasa al siguiente registro
+
+                # Intentar verificar la firma
+                try:
+                    pkcs1_15.new(llave_publica).verify(hash_obj, firma)
+                    firma_valida = True
+                    datos_firma = {
+                        'nombre_archivo': firma_registrada.document_name,
+                        'firmante': firma_registrada.user.username,
+                        'fecha_firma': firma_registrada.timestamp,
+                    }
+                    break  # Documento válido, detener búsqueda
+                except (ValueError, TypeError):
+                    continue
+
+            if not firma_valida:
+                error = "La firma no es válida o no coincide con ningún registro."
+
+        except Exception as e:
+            error = f"Error al procesar el documento: {e}"
+
+    return render(request, 'accounts/verificar_firma.html', {
+        'datos_firma': datos_firma,
+        'error': error
+    })
