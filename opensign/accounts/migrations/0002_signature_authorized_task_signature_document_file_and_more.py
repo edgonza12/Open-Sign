@@ -6,23 +6,26 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('accounts', '0001_initial'),
+        ("accounts", "0001_initial"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='signature',
-            name='authorized_task',
+            model_name="signature",
+            name="authorized_task",
             field=models.BooleanField(default=False),
         ),
         migrations.AddField(
-            model_name='signature',
-            name='document_file',
-            field=models.FileField(default='signed_documents/placeholder.pdf', upload_to='signed_documents/'),
+            model_name="signature",
+            name="document_file",
+            field=models.FileField(
+                default="signed_documents/placeholder.pdf",
+                upload_to="signed_documents/",
+            ),
         ),
         migrations.AlterField(
-            model_name='signature',
-            name='signed_document',
+            model_name="signature",
+            name="signed_document",
             field=models.BinaryField(blank=True, null=True),
         ),
     ]

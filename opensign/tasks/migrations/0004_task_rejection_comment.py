@@ -6,13 +6,13 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('tasks', '0003_task_signature_delete_signature'),
+        ("tasks", "0003_task_signature_delete_signature"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='task',
-            name='rejection_comment',
+            model_name="task",
+            name="rejection_comment",
             field=models.TextField(blank=True, null=True),
         ),
     ]

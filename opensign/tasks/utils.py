@@ -7,26 +7,29 @@ from reportlab.lib import colors
 from reportlab.lib.units import inch
 import io, base64
 
+
 def sign_task(data, private_key_pem):
     """
     Firma los datos de la tarea con la llave privada.
     """
     private_key = RSA.import_key(private_key_pem)
-    hashed_data = SHA256.new(data.encode('utf-8'))
+    hashed_data = SHA256.new(data.encode("utf-8"))
     signature = pkcs1_15.new(private_key).sign(hashed_data)
     return signature
+
 
 def verify_signature(data, signature, public_key_pem):
     """
     Verifica la firma de los datos con la llave pública.
     """
     public_key = RSA.import_key(public_key_pem)
-    hashed_data = SHA256.new(data.encode('utf-8'))
+    hashed_data = SHA256.new(data.encode("utf-8"))
     try:
         pkcs1_15.new(public_key).verify(hashed_data, signature)
         return True
     except (ValueError, TypeError):
         return False
+
 
 def generate_task_pdf(task, user_profile):
     """
@@ -57,7 +60,14 @@ def generate_task_pdf(task, user_profile):
 
     # Caja de información
     pdf.setFillColor(colors.HexColor("#e8f5e9"))  # Verde claro
-    pdf.rect(1 * inch, height - 5 * inch, width - 2 * inch, 3.3 * inch, fill=True, stroke=False)
+    pdf.rect(
+        1 * inch,
+        height - 5 * inch,
+        width - 2 * inch,
+        3.3 * inch,
+        fill=True,
+        stroke=False,
+    )
 
     # Contenido de la tarea
     pdf.setFillColor(colors.black)  # Texto negro
@@ -92,12 +102,14 @@ def generate_task_pdf(task, user_profile):
     # Firma digital (solo si está aprobada)
     if task.is_approved and task.signature:
         # Convertir la firma a texto base64 para incrustarla en el PDF (o como bytes, si es necesario)
-        signature_base64 = base64.b64encode(task.signature).decode('utf-8')
+        signature_base64 = base64.b64encode(task.signature).decode("utf-8")
         pdf.setFont("Helvetica-Bold", 12)
         pdf.drawString(1 * inch, height - 5.5 * inch, "Firma Digital:")
         pdf.setFont("Courier", 10)
-        signature_preview = str(signature_base64[:50])[:100] + "..." if task.signature else "Sin firma"
-        #signature_preview = str(task.signature)[:100] + "..." if task.signature else "Sin firma"
+        signature_preview = (
+            str(signature_base64[:50])[:100] + "..." if task.signature else "Sin firma"
+        )
+        # signature_preview = str(task.signature)[:100] + "..." if task.signature else "Sin firma"
         pdf.drawString(1 * inch, height - 5.8 * inch, signature_preview)
 
         # # Llave pública
@@ -110,7 +122,11 @@ def generate_task_pdf(task, user_profile):
     # Pie de página
     pdf.setFillColor(colors.HexColor("#004d40"))
     pdf.setFont("Helvetica-Oblique", 10)
-    pdf.drawString(1 * inch, 0.5 * inch, "Generado automáticamente - Sistema de Gestión de Tareas Open Sign")
+    pdf.drawString(
+        1 * inch,
+        0.5 * inch,
+        "Generado automáticamente - Sistema de Gestión de Tareas Open Sign",
+    )
 
     # Guardar y retornar el archivo
     pdf.save()
