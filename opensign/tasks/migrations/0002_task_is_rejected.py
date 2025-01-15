@@ -6,13 +6,13 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("tasks", "0001_initial"),
+        ('tasks', '0001_initial'),
     ]
 
     operations = [
         migrations.AddField(
-            model_name="task",
-            name="is_rejected",
+            model_name='task',
+            name='is_rejected',
             field=models.BooleanField(default=False),
         ),
     ]

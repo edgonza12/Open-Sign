@@ -4,7 +4,6 @@ from Crypto.Hash import SHA256
 from Crypto.PublicKey import RSA
 from Crypto.Signature import pkcs1_15
 
-
 def sign_pdf(document_path, output_path, private_key, user_id):
     try:
         # Leer el archivo PDF
@@ -34,16 +33,11 @@ def sign_pdf(document_path, output_path, private_key, user_id):
         print(f"Error en el proceso de firma: {e}")
         return None
 
-
 def role_required(role_name):
     def decorator(view_func):
         def _wrapped_view(request, *args, **kwargs):
             if not request.user.groups.filter(name=role_name).exists():
-                return HttpResponseForbidden(
-                    "No tienes permiso para acceder a esta página."
-                )
+                return HttpResponseForbidden("No tienes permiso para acceder a esta página.")
             return view_func(request, *args, **kwargs)
-
         return _wrapped_view
-
     return decorator

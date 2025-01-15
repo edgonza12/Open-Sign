@@ -6,13 +6,13 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("accounts", "0007_signature_document_file"),
+        ('accounts', '0007_signature_document_file'),
     ]
 
     operations = [
         migrations.AddField(
-            model_name="userprofile",
-            name="public_key",
+            model_name='userprofile',
+            name='public_key',
             field=models.TextField(blank=True, null=True),
         ),
     ]

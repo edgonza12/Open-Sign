@@ -1,23 +1,14 @@
 from django.db import models
 from django.contrib.auth.models import User
 
-
 class Task(models.Model):
     title = models.CharField(max_length=200)
     description = models.TextField()
     signature = models.BinaryField(null=True, blank=True)  # Almacena la firma digital
-    created_by = models.ForeignKey(
-        User, on_delete=models.CASCADE, related_name="created_tasks"
-    )
-    assigned_to = models.ForeignKey(
-        User,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name="assigned_tasks",
-    )
+    created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='created_tasks')
+    assigned_to = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='assigned_tasks')
     is_approved = models.BooleanField(default=False)
-    is_rejected = models.BooleanField(default=False)
+    is_rejected = models.BooleanField(default=False) 
     rejection_comment = models.TextField(blank=True, null=True)  # Nuevo campo
     created_at = models.DateTimeField(auto_now_add=True)
 

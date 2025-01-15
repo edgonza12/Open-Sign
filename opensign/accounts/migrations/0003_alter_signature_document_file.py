@@ -6,13 +6,13 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("accounts", "0002_signature_authorized_task_signature_document_file_and_more"),
+        ('accounts', '0002_signature_authorized_task_signature_document_file_and_more'),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name="signature",
-            name="document_file",
-            field=models.FileField(upload_to="signed_documents/"),
+            model_name='signature',
+            name='document_file',
+            field=models.FileField(upload_to='signed_documents/'),
         ),
     ]

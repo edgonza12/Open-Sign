@@ -6,12 +6,12 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("accounts", "0005_alter_signature_user"),
+        ('accounts', '0005_alter_signature_user'),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name="signature",
-            name="document_file",
+            model_name='signature',
+            name='document_file',
         ),
     ]
