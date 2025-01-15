@@ -6,16 +6,16 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('tasks', '0002_task_is_rejected'),
+        ("tasks", "0002_task_is_rejected"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='task',
-            name='signature',
+            model_name="task",
+            name="signature",
             field=models.BinaryField(blank=True, null=True),
         ),
         migrations.DeleteModel(
-            name='Signature',
+            name="Signature",
         ),
     ]
